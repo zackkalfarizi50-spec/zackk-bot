@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZACKK BOT</title>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family:Arial,sans-serif; background:linear-gradient(135deg,#080808,#151515);
+      color:white; padding:20px;
+    }
+    .card{
+      width:100%; max-width:430px; background:#111; border:1px solid #292929;
+      border-radius:24px; padding:28px; box-shadow:0 20px 60px #000;
+    }
+    h1{text-align:center;margin:0 0 8px;font-size:30px}
+    .sub{text-align:center;color:#aaa;margin-bottom:28px}
+    label{display:block;margin-bottom:8px;color:#ddd}
+    input{
+      width:100%; padding:15px; border-radius:12px; border:1px solid #333;
+      background:#090909;color:#fff;font-size:16px;outline:none;
+    }
+    button{
+      width:100%; margin-top:14px; padding:15px; border:0; border-radius:12px;
+      background:#25d366;color:#071007;font-weight:bold;font-size:16px;cursor:pointer;
+    }
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .status{
+      margin-top:20px;padding:14px;border-radius:12px;background:#090909;
+      border:1px solid #292929;line-height:1.5;word-break:break-word;
+    }
+    .code{
+      display:none;margin-top:15px;text-align:center;background:#181818;
+      border-radius:14px;padding:18px;font-size:28px;font-weight:bold;letter-spacing:4px;
+    }
+    .help{font-size:12px;color:#888;margin-top:16px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🤖 ZACKK BOT</h1>
+    <div class="sub">WhatsApp Bot Panel</div>
+
+    <label for="number">Nomor WhatsApp</label>
+    <input id="number" type="tel" placeholder="628xxxxxxxxxx">
+
+    <button id="pair">Masukkan Nomor WA</button>
+
+    <div class="status" id="status">Status: menunggu nomor...</div>
+    <div class="code" id="code"></div>
+
+    <div class="help">
+      Gunakan format internasional tanpa tanda + atau spasi.
+      Contoh Indonesia: 628123456789.
+    </div>
+  </div>
+
+<script>
+const number = document.getElementById("number");
+const pair = document.getElementById("pair");
+const statusBox = document.getElementById("status");
+const codeBox = document.getElementById("code");
+
+pair.onclick = async () => {
+  const value = number.value.trim();
+  if (!value) {
+    statusBox.textContent = "Status: masukkan nomor WhatsApp.";
+    return;
+  }
+
+  pair.disabled = true;
+  codeBox.style.display = "none";
+  statusBox.textContent = "Status: membuat pairing code...";
+
+  try {
+    const res = await fetch("/api/pair", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({number:value})
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Gagal.");
+
+    if (data.pairingCode) {
+      codeBox.textContent = data.pairingCode;
+      codeBox.style.display = "block";
+      statusBox.textContent =
+        "Status: pairing code dibuat. Buka WhatsApp → Perangkat tertaut → Tautkan perangkat → Tautkan dengan nomor telepon.";
+    } else {
+      statusBox.textContent = "Status: " + (data.message || "Bot terhubung.");
+    }
+  } catch (e) {
+    statusBox.textContent = "Error: " + e.message;
+  } finally {
+    pair.disabled = false;
+  }
+};
+
+async function checkStatus(){
+  try{
+    const res = await fetch("/api/status");
+    const data = await res.json();
+    if(data.connected){
+      statusBox.textContent = "Status: ✅ WhatsApp terhubung.";
+    }
+  }catch(e){}
+}
+setInterval(checkStatus, 5000);
+</script>
+</body>
+</html>
